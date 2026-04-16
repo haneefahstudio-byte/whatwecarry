@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What We Carry</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cream: #f9f5ee;
+  --ink: #1c0d00;
+  --ink-mid: #5a3a1a;
+  --ink-light: #9a7a5a;
+  --border: rgba(90,58,26,0.15);
+}
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'Cormorant Garamond', serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── HEADER ── */
+header {
+  text-align: center;
+  padding: 2.5rem 2rem 0;
+}
+
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 5.5vw, 4rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.subtitle {
+  font-size: 1rem;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--ink-mid);
+  letter-spacing: 0.06em;
+  margin-top: 0.5rem;
+}
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  justify-content: center;
+  margin: 1.8rem auto 0;
+  border-bottom: 1px solid var(--border);
+  max-width: 420px;
+  gap: 0;
+}
+
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 0.55rem 2.2rem;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.tab.active {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+/* ── VIEWS ── */
+.view { display: none; }
+.view.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ── GAME VIEW ── */
+#game-view {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 1.5rem 1.2rem 3rem;
+}
+
+.instruction {
+  text-align: center;
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--ink-mid);
+  margin-bottom: 2rem;
+  letter-spacing: 0.03em;
+}
+
+.instruction strong {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* columns + thread canvas wrapper */
+.board-wrapper {
+  position: relative;
+}
+
+#thread-svg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 0 6px;
+  border-right: 1px solid var(--border);
+}
+.column:last-child { border-right: none; }
+
+.col-header {
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink-mid);
+  text-align: center;
+  padding: 0.5rem 0 1rem;
+  line-height: 1.3;
+  min-height: 52px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.word-btn {
+  position: relative;
+  background: none;
+  border: none;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(0.78rem, 1.5vw, 0.95rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0.6rem 0.4rem;
+  width: 100%;
+  text-align: center;
+  transition: color 0.15s;
+  line-height: 1.2;
+}
+
+.word-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: 0.25;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.word-btn:hover::before { opacity: 0.5; transform: translate(-50%, -50%) scale(1.3); }
+
+.word-btn.selected {
+  font-weight: 500;
+}
+
+.word-btn.selected::before {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.5);
+  background: var(--user-color, #c0392b);
+}
+
+/* ── BOTTOM CONTROLS ── */
+.controls {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sentence-preview {
+  font-size: 1.05rem;
+  font-style: italic;
+  color: var(--ink-mid);
+  text-align: center;
+  min-height: 1.4em;
+  letter-spacing: 0.04em;
+  transition: all 0.3s;
+}
+
+.sentence-preview span {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--ink);
+  border-bottom: 1.5px solid currentColor;
+  padding-bottom: 1px;
+}
+
+.btn-row {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.btn {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.65rem 2rem;
+  border: 1px solid var(--ink);
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn:hover { background: var(--ink); color: var(--cream); }
+
+.btn.primary {
+  background: var(--ink);
+  color: var(--cream);
+}
+.btn.primary:hover { background: var(--ink-mid); border-color: var(--ink-mid); }
+.btn.primary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── COLLECTIVE VIEW ── */
+#collective-view {
+  padding: 1.5rem 1.2rem 3rem;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.collective-header {
+  text-align: center;
+  margin-bottom: 1.2rem;
+}
+
+.collective-header p {
+  font-style: italic;
+  color: var(--ink-mid);
+  font-size: 1rem;
+}
+
+#collective-canvas-wrap {
+  position: relative;
+  width: 100%;
+  background: #0d0705;
+  border-radius: 2px;
+  overflow: hidden;
+  min-height: 520px;
+}
+
+#collective-svg {
+  width: 100%;
+  display: block;
+}
+
+/* column labels on collective */
+.col-label-group text {
+  fill: rgba(255,255,255,0.35);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.submissions-list {
+  margin-top: 1.8rem;
+}
+
+.submissions-list h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  color: var(--ink-mid);
+}
+
+.submission-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.95rem;
+  font-style: italic;
+  color: var(--ink-mid);
+  animation: slideIn 0.4s ease;
+}
+
+@keyframes slideIn { from { opacity:0; transform: translateX(-8px); } to { opacity:1; transform: none; } }
+
+.submission-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: rgba(255,255,255,0.3);
+  font-style: italic;
+  font-size: 1rem;
+}
+
+/* success message */
+.success-msg {
+  text-align: center;
+  padding: 0.7rem 1.5rem;
+  background: rgba(26,10,0,0.06);
+  border: 1px solid var(--border);
+  font-style: italic;
+  color: var(--ink-mid);
+  font-size: 0.9rem;
+  display: none;
+}
+
+.count-badge {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>What We Carry</h1>
+  <p class="subtitle">Thread your story through the words that hold you</p>
+
+  <nav class="tabs">
+    <button class="tab active" onclick="switchTab('game')">Your Thread</button>
+    <button class="tab" onclick="switchTab('collective')">Collective Web</button>
+  </nav>
+</header>
+
+<!-- ═══ GAME VIEW ═══ -->
+<section id="game-view" class="view active">
+  <div id="game-area">
+    <p class="instruction">
+      Select <strong>one word from each column</strong> — left to right — to thread your story.
+    </p>
+
+    <div class="board-wrapper" id="board-wrapper">
+      <svg id="thread-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="columns" id="columns"></div>
+    </div>
+
+    <div class="controls">
+      <div class="sentence-preview" id="sentence-preview">
+        Choose a word from each column to weave your thread…
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="resetSelection()">Clear</button>
+        <button class="btn primary" id="submit-btn" disabled onclick="submitThread()">Add to the Web</button>
+      </div>
+      <div class="success-msg" id="success-msg">Your thread has been woven into the collective. ✦</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ COLLECTIVE VIEW ═══ -->
+<section id="collective-view" class="view">
+  <div class="collective-header">
+    <p id="count-badge" class="count-badge"></p>
+    <p>Every thread is a story. Together they make the web.</p>
+  </div>
+
+  <div id="collective-canvas-wrap">
+    <svg id="collective-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <div class="submissions-list">
+    <h3>Threads woven</h3>
+    <div id="submissions-list"></div>
+  </div>
+</section>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────
+const COLUMNS = [
+  {
+    header: "What I Carry",
+    words: ["Grief","Memory","Joy","Faith","Silence","Displacement","Fear","Love"]
+  },
+  {
+    header: "Where It Came From",
+    words: ["Family","Culture","A Specific Event","Childhood","A Country","A Loss","An Encounter","A Choice"]
+  },
+  {
+    header: "How It Feels",
+    words: ["Heavy","Comforting","Confusing","Empowering","Unspoken","Tender","Ever-Present","Changing"]
+  },
+  {
+    header: "What It Made Me",
+    words: ["Rooted","Free","Still Healing","Resilient","A Storyteller","Disconnected","Compassionate","Creative"]
+  }
+];
+
+const COLORS = [
+  '#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c',
+  '#3498db','#9b59b6','#e91e8c','#ff6b6b','#ffd93d',
+  '#6bcb77','#4d96ff','#c77dff','#ff9a3c','#06d6a0',
+  '#ef476f','#ffd166','#26547c','#a7c957','#bc6c25'
+];
+
+const STORAGE_KEY = 'wwc_submissions_v2';
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let selected = [null, null, null, null]; // index per column
+let userColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+let submissions = [];
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+function init() {
+  loadSubmissions();
+  buildColumns();
+  // Seed a few demo threads so the collective isn't empty
+  if (submissions.length === 0) {
+    const demos = [
+      {picks:[0,0,0,0], color:'#3498db'},
+      {picks:[1,1,1,1], color:'#e74c3c'},
+      {picks:[4,4,4,4], color:'#2ecc71'},
+      {picks:[3,2,1,3], color:'#f1c40f'},
+      {picks:[6,7,6,6], color:'#9b59b6'},
+      {picks:[2,3,2,2], color:'#e67e22'},
+      {picks:[7,5,7,7], color:'#1abc9c'},
+      {picks:[5,6,5,5], color:'#e91e8c'},
+    ];
+    demos.forEach(d => submissions.push({ picks: d.picks, color: d.color }));
+    saveSubmissions();
+  }
+  document.documentElement.style.setProperty('--user-color', userColor);
+}
+
+// ── STORAGE ───────────────────────────────────────────────────────────────
+function loadSubmissions() {
+  try {
+    submissions = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch(e) { submissions = []; }
+}
+
+function saveSubmissions() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(submissions)); } catch(e) {}
+}
+
+// ── BUILD BOARD ───────────────────────────────────────────────────────────
+function buildColumns() {
+  const container = document.getElementById('columns');
+  container.innerHTML = '';
+
+  COLUMNS.forEach((col, ci) => {
+    const colEl = document.createElement('div');
+    colEl.className = 'column';
+    colEl.id = `col-${ci}`;
+
+    const hdr = document.createElement('div');
+    hdr.className = 'col-header';
+    hdr.textContent = col.header;
+    colEl.appendChild(hdr);
+
+    col.words.forEach((word, wi) => {
+      const btn = document.createElement('button');
+      btn.className = 'word-btn';
+      btn.textContent = word;
+      btn.dataset.col = ci;
+      btn.dataset.row = wi;
+      btn.id = `w-${ci}-${wi}`;
+      btn.onclick = () => selectWord(ci, wi);
+      colEl.appendChild(btn);
+    });
+
+    container.appendChild(colEl);
+  });
+}
+
+// ── SELECTION ─────────────────────────────────────────────────────────────
+function selectWord(col, row) {
+  // deselect previous in this column
+  if (selected[col] !== null) {
+    const prev = document.getElementById(`w-${col}-${selected[col]}`);
+    if (prev) prev.classList.remove('selected');
+  }
+  selected[col] = row;
+  const btn = document.getElementById(`w-${col}-${row}`);
+  btn.classList.add('selected');
+  btn.style.color = userColor;
+
+  updateThread();
+  updatePreview();
+  updateSubmitBtn();
+}
+
+function resetSelection() {
+  selected = [null, null, null, null];
+  document.querySelectorAll('.word-btn.selected').forEach(b => {
+    b.classList.remove('selected');
+    b.style.color = '';
+  });
+  document.getElementById('thread-svg').innerHTML = '';
+  document.getElementById('sentence-preview').innerHTML = 'Choose a word from each column to weave your thread…';
+  document.getElementById('submit-btn').disabled = true;
+  document.getElementById('success-msg').style.display = 'none';
+}
+
+function updateSubmitBtn() {
+  document.getElementById('submit-btn').disabled = selected.some(s => s === null);
+}
+
+// ── THREAD DRAWING ────────────────────────────────────────────────────────
+function getWordCenter(col, row) {
+  const btn = document.getElementById(`w-${col}-${row}`);
+  if (!btn) return null;
+  const wrapper = document.getElementById('board-wrapper');
+  const bRect = btn.getBoundingClientRect();
+  const wRect = wrapper.getBoundingClientRect();
+  return {
+    x: bRect.left - wRect.left + bRect.width / 2,
+    y: bRect.top - wRect.top + bRect.height / 2
+  };
+}
+
+function updateThread() {
+  const svg = document.getElementById('thread-svg');
+  svg.innerHTML = '';
+
+  const pts = [];
+  for (let ci = 0; ci < 4; ci++) {
+    if (selected[ci] !== null) {
+      const pt = getWordCenter(ci, selected[ci]);
+      if (pt) pts.push({ ci, pt });
+    }
+  }
+
+  if (pts.length < 2) return;
+
+  // draw smooth path through selected points
+  const pathData = buildCurvedPath(pts.map(p => p.pt));
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d', pathData);
+  path.setAttribute('stroke', userColor);
+  path.setAttribute('stroke-width', '2');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('opacity', '0.85');
+
+  // animate draw
+  const len = 2000;
+  path.style.strokeDasharray = len;
+  path.style.strokeDashoffset = len;
+  path.style.transition = 'stroke-dashoffset 0.4s ease';
+  svg.appendChild(path);
+  requestAnimationFrame(() => { path.style.strokeDashoffset = '0'; });
+
+  // dots at each anchor
+  pts.forEach(({ pt }) => {
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx', pt.x);
+    c.setAttribute('cy', pt.y);
+    c.setAttribute('r', '4');
+    c.setAttribute('fill', userColor);
+    c.setAttribute('opacity', '0.9');
+    svg.appendChild(c);
+  });
+}
+
+function buildCurvedPath(pts) {
+  if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) {
+    const prev = pts[i-1];
+    const curr = pts[i];
+    const cpx = (prev.x + curr.x) / 2;
+    d += ` C ${cpx} ${prev.y} ${cpx} ${curr.y} ${curr.x} ${curr.y}`;
+  }
+  return d;
+}
+
+// ── PREVIEW TEXT ──────────────────────────────────────────────────────────
+function updatePreview() {
+  const el = document.getElementById('sentence-preview');
+  const parts = selected.map((row, col) => {
+    if (row === null) return `<em style="opacity:0.4">[${COLUMNS[col].header}]</em>`;
+    return `<span style="color:${userColor}">${COLUMNS[col].words[row]}</span>`;
+  });
+  el.innerHTML = parts.join(' &nbsp;·&nbsp; ');
+}
+
+// ── SUBMIT ────────────────────────────────────────────────────────────────
+function submitThread() {
+  if (selected.some(s => s === null)) return;
+
+  submissions.push({ picks: [...selected], color: userColor });
+  saveSubmissions();
+
+  // pick new color for next user
+  let newColor;
+  do { newColor = COLORS[Math.floor(Math.random() * COLORS.length)]; }
+  while (newColor === userColor && COLORS.length > 1);
+  userColor = newColor;
+  document.documentElement.style.setProperty('--user-color', userColor);
+
+  document.getElementById('success-msg').style.display = 'block';
+  document.getElementById('submit-btn').disabled = true;
+
+  // reset for next person
+  setTimeout(() => resetSelection(), 800);
+}
+
+// ── COLLECTIVE WEB ────────────────────────────────────────────────────────
+function renderCollective() {
+  const svg = document.getElementById('collective-svg');
+  const wrap = document.getElementById('collective-canvas-wrap');
+  const W = wrap.clientWidth || 900;
+  const H = Math.max(520, W * 0.52);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('height', H);
+  svg.innerHTML = '';
+
+  const PAD_X = W * 0.08;
+  const PAD_TOP = 55;
+  const PAD_BOT = 30;
+  const colXs = [0,1,2,3].map(i => PAD_X + i * (W - 2*PAD_X) / 3);
+  const rowCount = COLUMNS[0].words.length;
+
+  // background
+  const bg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  bg.setAttribute('width', W); bg.setAttribute('height', H);
+  bg.setAttribute('fill', '#0d0705');
+  svg.appendChild(bg);
+
+  // subtle vertical guides
+  colXs.forEach((x, i) => {
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', x); line.setAttribute('y1', PAD_TOP);
+    line.setAttribute('x2', x); line.setAttribute('y2', H - PAD_BOT);
+    line.setAttribute('stroke', 'rgba(255,255,255,0.06)');
+    line.setAttribute('stroke-width', '1');
+    svg.appendChild(line);
+  });
+
+  // column headers
+  COLUMNS.forEach((col, ci) => {
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x', colXs[ci]);
+    t.setAttribute('y', PAD_TOP - 16);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('fill', 'rgba(255,255,255,0.28)');
+    t.setAttribute('font-family', 'Cormorant Garamond, serif');
+    t.setAttribute('font-size', '9');
+    t.setAttribute('letter-spacing', '2');
+    t.textContent = col.header.toUpperCase();
+    svg.appendChild(t);
+  });
+
+  // word labels
+  COLUMNS.forEach((col, ci) => {
+    col.words.forEach((word, wi) => {
+      const y = getWordY(wi, rowCount, PAD_TOP, H - PAD_BOT);
+      const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x', colXs[ci]);
+      t.setAttribute('y', y + 4);
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('fill', 'rgba(255,255,255,0.18)');
+      t.setAttribute('font-family', 'Cormorant Garamond, serif');
+      t.setAttribute('font-size', '10');
+      t.setAttribute('letter-spacing', '1.5');
+      t.textContent = word.toUpperCase();
+      svg.appendChild(t);
+
+      // anchor dot
+      const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      dot.setAttribute('cx', colXs[ci]);
+      dot.setAttribute('cy', y);
+      dot.setAttribute('r', '3');
+      dot.setAttribute('fill', 'rgba(255,255,255,0.12)');
+      svg.appendChild(dot);
+    });
+  });
+
+  // threads
+  submissions.forEach((sub, si) => {
+    const pts = sub.picks.map((row, col) => ({
+      x: colXs[col],
+      y: getWordY(row, rowCount, PAD_TOP, H - PAD_BOT)
+    }));
+    const d = buildCurvedPath(pts);
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', d);
+    path.setAttribute('stroke', sub.color);
+    path.setAttribute('stroke-width', '1.5');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('opacity', '0.55');
+    svg.appendChild(path);
+
+    // anchor dots on thread
+    pts.forEach(pt => {
+      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx', pt.x);
+      c.setAttribute('cy', pt.y);
+      c.setAttribute('r', '3');
+      c.setAttribute('fill', sub.color);
+      c.setAttribute('opacity', '0.8');
+      svg.appendChild(c);
+    });
+  });
+
+  // empty state
+  if (submissions.length === 0) {
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x', W/2); t.setAttribute('y', H/2);
+    t.setAttribute('text-anchor','middle');
+    t.setAttribute('fill','rgba(255,255,255,0.25)');
+    t.setAttribute('font-family','Cormorant Garamond, serif');
+    t.setAttribute('font-size','16');
+    t.setAttribute('font-style','italic');
+    t.textContent = 'No threads yet. Be the first to add yours.';
+    svg.appendChild(t);
+  }
+
+  // count
+  document.getElementById('count-badge').textContent =
+    `${submissions.length} thread${submissions.length !== 1 ? 's' : ''} woven`;
+
+  // list
+  renderList();
+}
+
+function getWordY(row, total, top, bottom) {
+  const usable = bottom - top;
+  const step = usable / (total - 1);
+  return top + row * step;
+}
+
+function renderList() {
+  const el = document.getElementById('submissions-list');
+  el.innerHTML = '';
+  if (submissions.length === 0) {
+    el.innerHTML = '<p style="font-style:italic;color:var(--ink-light);font-size:0.9rem">No threads yet.</p>';
+    return;
+  }
+  [...submissions].reverse().forEach(sub => {
+    const sentence = sub.picks.map((row, col) => COLUMNS[col].words[row]).join(' · ');
+    const div = document.createElement('div');
+    div.className = 'submission-item';
+    div.innerHTML = `
+      <span class="submission-dot" style="background:${sub.color}"></span>
+      <span>${sentence}</span>`;
+    el.appendChild(div);
+  });
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById(`${tab}-view`).classList.add('active');
+  if (tab === 'collective') {
+    setTimeout(renderCollective, 50);
+  }
+}
+
+// ── START ─────────────────────────────────────────────────────────────────
+init();
+
+// redraw thread on resize
+window.addEventListener('resize', () => {
+  if (selected.some(s => s !== null)) updateThread();
+});
+</script>
+</body>
+</html>
